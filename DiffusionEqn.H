@@ -1,0 +1,176 @@
+/*=============================================================================
+*   
+*   Filename : DiffusionEqn.H
+*   Creator : Han Zhou
+*   Date : 11/20/21
+*   Description : 
+*
+=============================================================================*/
+ 
+#ifndef _DIFFUSIONEQN_H
+#define _DIFFUSIONEQN_H
+
+#include "CartesianGrid.H"
+#include "Variables.h"
+
+class DiffusionEqn : public CartesianGrid
+{
+	public :
+		DiffusionEqn(void);
+		virtual ~DiffusionEqn(void);
+
+		DiffusionEqn(const CartesianGrid &g);
+
+	public :
+
+#ifdef USE_OPENGL
+		void setPlotOption(int);
+		void plotSolution(void) const;
+#endif
+
+	public :
+
+		void setGrid(const CartesianGrid &g);
+
+		void setExactSolution(double (*Ui)(double, double, double), 
+													double (*Ue)(double, double, double));
+
+		void setCoefficient(double);
+		void setPrintInterval(double);
+
+		double U(double, double, double, bool) const;
+		double Ux(double, double, double, bool) const;
+		double Uy(double, double, double, bool) const;
+		double Uxx(double, double, double, bool) const;
+		double Uyy(double, double, double, bool) const;
+
+		void initialize(double t0, double T);
+
+		double getTimeStep(void) const;
+
+		int getTimeStepNumber(void) const;
+
+		void getSplittedNeumannBC(int i, double t, double &, double &) const;
+		void getSplittedNeumannBC2(int i, double t, double &, double &) const;
+
+
+		void computeInteriorError(const MatrixXd &u,
+															double &max_err, double &l2_err) const;
+
+		void advanceByStrang(double t, double dt);
+		void advanceByADI(double t, double dt);
+		void advanceByStrang_N(double t, double dt);
+		void advanceByADI_N(double t, double dt);
+		void advanceByADI_N_2(double t, double dt);
+
+		void advance(double t, double dt);
+
+		void solve(void);
+
+	private :
+
+#ifdef USE_OPENGL
+		int _plot_opt;
+#endif
+
+		double _epsilon;
+
+		double _T;
+		double _t;
+		double _dt;
+
+		double _print_info_interval;
+
+		int _max_step_num;
+		int _step_count;
+		int _check_interval;
+		
+		double (*_Ui)(double, double, double);
+		double (*_Ue)(double, double, double);
+
+		MatrixXd _u;
+		MatrixXd _work;
+
+		MatrixXd _ux;
+		MatrixXd _uy;
+		MatrixXd _uxx;
+		MatrixXd _uyy;
+
+		VectorXd _u_tau_past1;
+		VectorXd _u_tau_past2;
+
+		VectorXd _u_x_past1;
+		VectorXd _u_x_past2;
+
+		VectorXd _u_y_past1;
+		VectorXd _u_y_past2;
+};
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline DiffusionEqn::DiffusionEqn(void) : CartesianGrid()
+{
+	_T = 1.0;
+	_t = 0.0;
+	_dt = 0.01;
+
+	_epsilon = 1.0;
+
+	_print_info_interval = 0.1;
+}
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline DiffusionEqn::~DiffusionEqn(void)
+{
+}
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline DiffusionEqn::
+DiffusionEqn(const CartesianGrid &g) : CartesianGrid(g)
+{
+	_T = 1.0;
+	_t = 0.0;
+	_dt = 0.01;
+
+	_epsilon = 1.0;
+
+	_print_info_interval = 0.1;
+}
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline void DiffusionEqn::
+setExactSolution(double (*Ui)(double, double, double), 
+								 double (*Ue)(double, double, double))
+{
+	_Ui = Ui;
+	_Ue = Ue;
+}
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline void DiffusionEqn::setCoefficient(double k)
+{
+	_epsilon = k;
+}
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline void DiffusionEqn::setPrintInterval(double d)
+{
+	_print_info_interval = d;
+}
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline double DiffusionEqn::getTimeStep(void) const
+{
+	return _dt;
+}
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+inline int DiffusionEqn::getTimeStepNumber(void) const
+{
+	return _max_step_num;
+}
+
+//=============================================================================
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#endif
+
